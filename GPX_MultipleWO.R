@@ -5,7 +5,7 @@ library(plotKML)
 library(dplyr)
 library(geosphere)
 library(lubridate)
-
+#test
 # Use default titles of GPX files.
 # Set working directory here:
 setwd("~/R GPS")
