@@ -9,8 +9,8 @@ library(shinyjs)
 library(shinyFiles)
 library(leaflet)
 
-setwd(choose.dir(getwd(),"Choose a suitable folder")) # select subfolder 'scripts', works OK
-# setwd("C:/Users/Andrew.Plucker/Desktop/textfolder")
+# setwd(choose.dir(getwd(),"Choose a suitable folder")) # select subfolder 'scripts', works OK
+setwd("C:/Users/Andrew.Plucker/Desktop/textfolder")
 
 # files <- list.files(pattern = "\\b20")
 
@@ -19,8 +19,11 @@ ui <- dashboardPage(skin = "yellow",
                     dashboardSidebar(useShinyjs(),
                                      sidebarMenu(
                                        menuItem("Input Panel", tabName = "Data", icon = icon("dashboard"), startExpanded = TRUE,
-                                                actionButton("do", "Transform Data")    ,
+                                                actionButton("do", "Transform Data"),
+                                                conditionalPanel(
+                                                  condition = "input.do == true",
                                                 actionButton("gomap","makemapgo")
+                                                )
                                        )
                                       )),
                     dashboardBody(
