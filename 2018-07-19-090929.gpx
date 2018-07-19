@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx
+  version="1.1"
+  creator="Runkeeper - http://www.runkeeper.com"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.topografix.com/GPX/1/1"
+  xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd"
+  xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
+<trk>
+  <name><![CDATA[Walking 7/19/18 9:09 am]]></name>
+  <time>2018-07-19T13:09:29Z</time>
+<trkseg>
+<trkpt lat="41.390397000" lon="-73.954759000"><ele>30.0</ele><time>2018-07-19T13:09:29Z</time></trkpt>
+<trkpt lat="41.390388000" lon="-73.954746000"><ele>30.0</ele><time>2018-07-19T13:09:56Z</time></trkpt>
+</trkseg>
+</trk>
+</gpx>
