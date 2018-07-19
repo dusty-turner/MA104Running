@@ -8,10 +8,12 @@ library(lubridate)
 #test
 # Use default titles of GPX files.
 # Set working directory here:
-setwd("~/R GPS")
+# setwd("~/R GPS")
 
 # Create a list of the file names that begin with "20....", which is the default for GPX files exported from RunKeeper.com
 files <- list.files(pattern = "\\b20")
+
+readGPX(files[1], way=T)
 
 # Loop to iterate through each GPX file.
 for (j in 1:length(files)) {
