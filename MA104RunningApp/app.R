@@ -9,8 +9,8 @@ library(shinyjs)
 library(shinyFiles)
 library(leaflet)
 
-# setwd(choose.dir(getwd(),"Choose a suitable folder")) # select subfolder 'scripts', works OK
-setwd("C:/Users/Andrew.Plucker/Desktop/textfolder")
+setwd(choose.dir(getwd(),"Choose a suitable folder")) # select subfolder 'scripts', works OK
+# setwd("C:/Users/Andrew.Plucker/Desktop/textfolder")
 
 # files <- list.files(pattern = "\\b20")
 
