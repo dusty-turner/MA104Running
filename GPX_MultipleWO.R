@@ -1,6 +1,6 @@
 # Use this code with the GPX file extracted from RunKeeper.com  
 # The result of this code is to output .csv files 
-
+choose.dir(getwd(), "Choose a suitable folder") # select subfolder 'scripts', works OK
 library(plotKML)
 library(dplyr)
 library(geosphere)
@@ -62,8 +62,49 @@ for (j in 1:length(files)) {
   
 }
 
+library(stringr)
+
+temp = list.files(pattern="*.csv")
+myfiles = lapply(temp, read.delim)
+
+firsthelper = NULL
+helper = NULL
+for(i in 1:length(myfiles)){
+ helper =  as.data.frame(
+    matrix(
+      unlist(
+        strsplit(
+          as.character(unlist(myfiles[[i]][[1]])) , ","
+        )
+      ), ncol = 7, byrow = T
+      
+    )
+  )
+ firsthelper = rbind(firsthelper,helper)
+}
+
+names(firsthelper) = c("X", "DTG", "lon", "lat", "totTime", "totDist", "ele")
+
+tail(firsthelper)
+
+firsthelper = firsthelper %>%
+  mutate(DTG = as.POSIXct(DTG)) %>%
+  mutate(lon = as.numeric(as.character(lon))) %>%
+  mutate(lat = as.numeric(as.character(lat))) %>%
+  mutate(totTime = as.numeric(as.character(totTime))) %>%
+  mutate(totDist = as.numeric(as.character(totDist))) %>%
+  mutate(ele = as.numeric(as.character(ele))) 
+
+str(firsthelper)
 
 
-
-
-
+as.data.frame(
+ matrix(
+ unlist(
+  strsplit(
+as.character(unlist(myfiles[[1]][[1]])) , ","
+ )
+), ncol = 7, byrow = T
+ 
+)
+)

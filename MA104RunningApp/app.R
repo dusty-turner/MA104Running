@@ -6,45 +6,38 @@ library(dplyr)
 library(geosphere)
 library(lubridate)
 library(shinyjs)
+library(shinyFiles)
+library(leaflet)
 
-files <- list.files(pattern = "\\b20")
+# setwd(choose.dir(getwd(),"Choose a suitable folder")) # select subfolder 'scripts', works OK
+setwd("C:/Users/Andrew.Plucker/Desktop/textfolder")
+
+# files <- list.files(pattern = "\\b20")
 
 ui <- dashboardPage(skin = "yellow",
                     dashboardHeader(title = "MA104 Running App"),
                     dashboardSidebar(useShinyjs(),
                                      sidebarMenu(
-                                       menuItem("Data", tabName = "Data", icon = icon("dashboard"), startExpanded = TRUE, 
-                                                # fileInput('csvfile','Upload a CSV File',
-                                                #           accept = c('text/csv',
-                                                #                      'text/comma-separated-values,text/plain',
-                                                #                      '.csv',
-                                                #                      '.gpx')
-                                                #  )
-                                                fileInput("files", "Upload", multiple = TRUE, accept = c(".gpx")),
-                                                textInput("textid", "First.Last", "Dusty.Turner"),
-                                                actionButton("do", "Click Me")
-                                                
-                                       ),
-                                       menuItem("Selections", tabName = "Selections", icon = icon("dashboard"), startExpanded = TRUE,
-                                                uiOutput("ui1"))
- 
-                                     )),
-                    
-                    
+                                       menuItem("Input Panel", tabName = "Data", icon = icon("dashboard"), startExpanded = TRUE,
+                                                actionButton("do", "Transform Data")    ,
+                                                actionButton("gomap","makemapgo")
+                                       )
+                                      )),
                     dashboardBody(
-                                 tableOutput("text")
+                                 leafletOutput("mymap"),
+                                 textOutput("text"),
+                                 tableOutput("table")
                       )
 )                    
 # Define server logic required to draw a histogram
 server <- function(input, output) {
   
-  first = reactive({
-    text = paste0("C:/Users/",input$textid,"/Desktop/textfolder")
-    setwd(paste0("C:/Users/",input$textid,"/Desktop/textfolder"))
-    return(text)
-  })
-
-  output$text = renderTable(first())
+  # mytext = reactive({
+  #   var = paste0(getwd())
+  #   return(var)
+  # })
+  
+  # output$text = renderText(mytext())
 
   
   observeEvent(input$do, {
@@ -52,6 +45,8 @@ server <- function(input, output) {
     files <- list.files(pattern = "\\b20")
     
     readGPX(files[1], way=T)
+    
+    totalframe = NULL
     
     for (j in 1:length(files)) {
       # Select first file from the list and import data into R object
@@ -96,10 +91,73 @@ server <- function(input, output) {
       
       # Write .csv file
       write.csv(wpdfNew, paste0("Workout_",j,".csv"))
-      
+      totalframe = rbind(totalframe,wpdfNew)
+
     }
+  
   })
   
+  # maphelper =  reactive({
+  #                     mydata =read.csv("Workout_1.csv")
+  #   return(mydata)
+  #   })
+  
+
+ 
+  observeEvent(input$gomap, {
+  
+    temp = list.files(pattern="*.csv")
+    myfiles = lapply(temp, read.delim)
+    
+    firsthelper = NULL
+    helper = NULL
+    for(i in 1:length(myfiles)){
+      helper =  as.data.frame(
+        matrix(
+          unlist(
+            strsplit(
+              as.character(unlist(myfiles[[i]][[1]])) , ","
+            )
+          ), ncol = 7, byrow = T
+          
+        )
+      )
+      firsthelper = rbind(firsthelper,helper)
+    }
+    names(firsthelper) = c("X", "DTG", "lon", "lat", "totTime", "totDist", "ele")
+    
+    firsthelper = firsthelper %>%
+      mutate(DTG = as.POSIXct(DTG)) %>%
+      mutate(lon = as.numeric(as.character(lon))) %>%
+      mutate(lat = as.numeric(as.character(lat))) %>%
+      mutate(totTime = as.numeric(as.character(totTime))) %>%
+      mutate(totDist = as.numeric(as.character(totDist))) %>%
+      mutate(ele = as.numeric(as.character(ele))) 
+    
+    # firsthelper$ele = as.numeric(as.character(firsthelper$ele))
+    
+    
+    
+  output$mymap <- renderLeaflet({
+    pal <- colorNumeric(
+      palette = "Blues",
+      domain = firsthelper$ele)
+    
+    leaflet(firsthelper)  %>%
+      addTiles() %>%
+      # addProviderTiles(providers$Stamen.TonerLite,
+      #                  options = providerTileOptions(noWrap = TRUE)
+      # )   %>%
+      addCircleMarkers(radius = 1, color = ~pal(ele))
+  })
+  
+  # output$table = renderTable(maphelper())
+  output$table = renderTable(firsthelper)
+  
+  output$text = renderText(class(firsthelper$DTG))
+  
+  })
+   
 }
 
 
