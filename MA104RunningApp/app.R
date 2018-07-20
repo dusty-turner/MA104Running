@@ -8,9 +8,12 @@ library(lubridate)
 library(shinyjs)
 library(shinyFiles)
 library(leaflet)
+library(DT)
+library(RColorBrewer)
 
-setwd(choose.dir(getwd(),"Choose a suitable folder")) # select subfolder 'scripts', works OK
+# setwd(choose.dir(getwd(),"Choose a suitable folder")) # select subfolder 'scripts', works OK
 # setwd("C:/Users/Andrew.Plucker/Desktop/textfolder")
+setwd("C:/Users/Dusty.Turner/Desktop/textfoldera")
 
 # files <- list.files(pattern = "\\b20")
 
@@ -22,25 +25,23 @@ ui <- dashboardPage(skin = "yellow",
                                                 actionButton("do", "Transform Data"),
                                                 conditionalPanel(
                                                   condition = "input.do == true",
-                                                actionButton("gomap","View Map")
-                                                )
+                                                  actionButton("gomap","View Map")),
+                                                conditionalPanel(
+                                                  condition = "input.do == true",
+                                                  uiOutput("ui1"),
+                                                  uiOutput("ui2"))
                                        )
                                       )),
                     dashboardBody(
                                  leafletOutput("mymap"),
                                  textOutput("text"),
-                                 tableOutput("table")
+                                 DTOutput("table")
                       )
 )                    
 # Define server logic required to draw a histogram
 server <- function(input, output) {
   
-  # mytext = reactive({
-  #   var = paste0(getwd())
-  #   return(var)
-  # })
-  
-  # output$text = renderText(mytext())
+
 
   
   observeEvent(input$do, {
@@ -147,25 +148,61 @@ server <- function(input, output) {
     
     
   output$mymap <- renderLeaflet({
-    pal <- colorNumeric(
-      palette = "Blues",
-      domain = firsthelper$woNum)
+
+    pal <- colorFactor("Dark2", firsthelper$woNum, levels = unique(firsthelper$woNum))
     
-    leaflet(firsthelper)  %>%
+    firsthelper %>%
+      filter(DTG>=input$slider[1]) %>%
+      filter(DTG<=input$slider[2]) %>%
+      filter(woNum==input$selections) %>%
+    leaflet()  %>%
       addTiles() %>%
-      # addProviderTiles(providers$Stamen.TonerLite,
-      #                  options = providerTileOptions(noWrap = TRUE)
-      # )   %>%
       addCircleMarkers(radius = 1, color = ~pal(woNum))
   })
   
   # output$table = renderTable(maphelper())
-  output$table = renderTable(firsthelper)
+  output$table = renderDT(
+    firsthelper %>%
+      filter(DTG>=input$slider[1]) %>%
+      filter(DTG<=input$slider[2]) %>%
+      filter(woNum==input$selections)
+    )
   
-  output$text = renderText(class(firsthelper$DTG))
+  output$text = renderText(
+  unique(firsthelper$woNum[which(firsthelper$DTG > input$slider[1] & firsthelper$DTG < input$slider[2]) ])
+  # unique(firsthelper$woNum[which(firsthelper$DTG>input$slider[1])]&firsthelper$woNum[which(firsthelper$DTG<input$slider[2])])
+  )
   
+   # firsthelpernames = observe({
+   #   this = firsthelper %>%
+   #     filter(DTG>=input$slider[1]) 
+   #   thisa = unique(this$woNum)
+   #   return(thisa)
+   # })
+  
+  output$ui1 <- renderUI({
+    # if (is.null(input$dataset))
+    #   return()
+    checkboxGroupInput(
+      "selections",
+      label = h4("Display Routes"),
+      choices =   unique(firsthelper$woNum[which(firsthelper$DTG > input$slider[1] & firsthelper$DTG < input$slider[2]) ]),
+      selected =   unique(firsthelper$woNum[which(firsthelper$DTG > input$slider[1] & firsthelper$DTG < input$slider[2]) ])
+
+    )
   })
-   
+
+  output$ui2 <- renderUI({
+    # if (is.null(input$dataset))
+    #   return()
+    # sliderInput("slider", "Time", min = as.Date("2010-01-01"),max =as.Date("2018-12-01"),value=c(as.Date("2010-01-01"),as.Date("2018-12-01")),timeFormat="%b %Y")
+    sliderInput("slider", "Time", min = as.Date(min(firsthelper$DTG)),max =as.Date(max(firsthelper$DTG)),value=c(as.Date(min(firsthelper$DTG)),as.Date(max(firsthelper$DTG))),timeFormat="%b %Y")
+  })
+
+  # output$text = renderText(as.Date(input$slider[1]))
+    
+  })
+  
 }
 
 
