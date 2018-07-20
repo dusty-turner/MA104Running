@@ -9,8 +9,8 @@ library(shinyjs)
 library(shinyFiles)
 library(leaflet)
 
-# setwd(choose.dir(getwd(),"Choose a suitable folder")) # select subfolder 'scripts', works OK
-setwd("C:/Users/Andrew.Plucker/Desktop/textfolder")
+setwd(choose.dir(getwd(),"Choose a suitable folder")) # select subfolder 'scripts', works OK
+# setwd("C:/Users/Andrew.Plucker/Desktop/textfolder")
 
 # files <- list.files(pattern = "\\b20")
 
@@ -22,7 +22,7 @@ ui <- dashboardPage(skin = "yellow",
                                                 actionButton("do", "Transform Data"),
                                                 conditionalPanel(
                                                   condition = "input.do == true",
-                                                actionButton("gomap","makemapgo")
+                                                actionButton("gomap","View Map")
                                                 )
                                        )
                                       )),
@@ -125,9 +125,14 @@ server <- function(input, output) {
           
         )
       )
+      
+      n <- nrow(helper)
+      v <- rep(i,n)
+      helper = cbind(helper,v)
+      
       firsthelper = rbind(firsthelper,helper)
     }
-    names(firsthelper) = c("X", "DTG", "lon", "lat", "totTime", "totDist", "ele")
+    names(firsthelper) = c("X", "DTG", "lon", "lat", "totTime", "totDist", "ele","woNum")
     
     firsthelper = firsthelper %>%
       mutate(DTG = as.POSIXct(DTG)) %>%
@@ -144,14 +149,14 @@ server <- function(input, output) {
   output$mymap <- renderLeaflet({
     pal <- colorNumeric(
       palette = "Blues",
-      domain = firsthelper$ele)
+      domain = firsthelper$woNum)
     
     leaflet(firsthelper)  %>%
       addTiles() %>%
       # addProviderTiles(providers$Stamen.TonerLite,
       #                  options = providerTileOptions(noWrap = TRUE)
       # )   %>%
-      addCircleMarkers(radius = 1, color = ~pal(ele))
+      addCircleMarkers(radius = 1, color = ~pal(woNum))
   })
   
   # output$table = renderTable(maphelper())

@@ -62,6 +62,11 @@ for (j in 1:length(files)) {
   
 }
 
+
+
+# Other stuff that goes into the app.
+
+
 library(stringr)
 
 temp = list.files(pattern="*.csv")
@@ -80,8 +85,15 @@ for(i in 1:length(myfiles)){
       
     )
   )
+ 
+ n <- nrow(helper)
+ v <- rep(i,n)
+ helper = cbind(helper,v)
+ 
  firsthelper = rbind(firsthelper,helper)
 }
+
+firsthelper
 
 names(firsthelper) = c("X", "DTG", "lon", "lat", "totTime", "totDist", "ele")
 
