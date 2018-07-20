@@ -10,8 +10,9 @@ library(shinyFiles)
 library(leaflet)
 library(DT)
 library(RColorBrewer)
+library(shinyFiles)
 
-setwd(choose.dir(getwd(),"Choose a suitable folder")) # select subfolder 'scripts', works OK
+# setwd(choose.dir(getwd(),"Choose a suitable folder")) # select subfolder 'scripts', works OK
 # setwd("C:/Users/Andrew.Plucker/Desktop/textfolder")
 # setwd("C:/Users/Dusty.Turner/Desktop/textfoldera")
 
@@ -23,6 +24,7 @@ ui <- dashboardPage(skin = "yellow",
                                      sidebarMenu(
                                        menuItem("Input Panel", tabName = "Data", icon = icon("dashboard"), startExpanded = TRUE,
                                                 actionButton("do", "Transform Data"),
+                                                shinyFilesButton('files', label='File select', title='Please select a file', multiple=FALSE),
                                                 conditionalPanel(
                                                   condition = "input.do == true",
                                                   actionButton("gomap","View Map")),
@@ -41,7 +43,7 @@ ui <- dashboardPage(skin = "yellow",
 # Define server logic required to draw a histogram
 server <- function(input, output) {
   
-
+  shinyFileChoose(input, 'files', root=c(root='.'), filetypes=c('', 'txt'))
 
   
   observeEvent(input$do, {
