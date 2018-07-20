@@ -36,7 +36,7 @@ ui <- dashboardPage(skin = "yellow",
                                       )),
                     dashboardBody(
                                  leafletOutput("mymap"),
-                                 textOutput("text"),
+                                 # textOutput("text"),
                                  DTOutput("table")
                       )
 )                    
@@ -171,7 +171,9 @@ server <- function(input, output) {
     )
   
   output$text = renderText(
-  unique(firsthelper$woNum[which(firsthelper$DTG > input$slider[1] & firsthelper$DTG < input$slider[2]) ])
+    c(as.Date(min(firsthelper$DTG)),as.Date(min(firsthelper$DTG))-days(1))
+  # unique(firsthelper$woNum[which(firsthelper$DTG >= input$slider[1])] )
+  # unique(firsthelper$woNum[which(firsthelper$DTG >= input$slider[1] & firsthelper$DTG <= input$slider[2]) ])
   # unique(firsthelper$woNum[which(firsthelper$DTG>input$slider[1])]&firsthelper$woNum[which(firsthelper$DTG<input$slider[2])])
   )
   
@@ -188,8 +190,8 @@ server <- function(input, output) {
     checkboxGroupInput(
       "selections",
       label = h4("Display Routes"),
-      choices =   unique(firsthelper$woNum[which(firsthelper$DTG > input$slider[1] & firsthelper$DTG < input$slider[2]) ]),
-      selected =   unique(firsthelper$woNum[which(firsthelper$DTG > input$slider[1] & firsthelper$DTG < input$slider[2]) ])
+      choices =   unique(firsthelper$woNum[which(firsthelper$DTG >= input$slider[1] & firsthelper$DTG <= input$slider[2]) ]),
+      selected =   unique(firsthelper$woNum[which(firsthelper$DTG >= input$slider[1] & firsthelper$DTG <= input$slider[2]) ])
 
     )
   })
@@ -198,7 +200,8 @@ server <- function(input, output) {
     # if (is.null(input$dataset))
     #   return()
     # sliderInput("slider", "Time", min = as.Date("2010-01-01"),max =as.Date("2018-12-01"),value=c(as.Date("2010-01-01"),as.Date("2018-12-01")),timeFormat="%b %Y")
-    sliderInput("slider", "Time", min = as.Date(min(firsthelper$DTG)),max =as.Date(max(firsthelper$DTG)),value=c(as.Date(min(firsthelper$DTG)),as.Date(max(firsthelper$DTG))),timeFormat="%b %Y")
+    sliderInput("slider", "Time", min = as.Date(min(firsthelper$DTG)-days(1)),max =as.Date(max(firsthelper$DTG)+days(1)),value=c(as.Date(min(firsthelper$DTG)-days(1)),as.Date(max(firsthelper$DTG)+days(1))))
+    # sliderInput("slider", "Time", min = as.Date(min(firsthelper$DTG)),max =as.Date(max(firsthelper$DTG)),value=c(as.Date(min(firsthelper$DTG)),as.Date(max(firsthelper$DTG))),timeFormat="%b %Y")
   })
 
   # output$text = renderText(as.Date(input$slider[1]))
