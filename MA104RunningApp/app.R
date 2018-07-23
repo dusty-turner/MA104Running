@@ -1,16 +1,13 @@
-library(shiny) 
 library(tidyverse)
 library(shinydashboard)
 library(plotKML)
-library(dplyr)
 library(geosphere)
 library(lubridate)
 library(shinyjs)
-library(shinyFiles)
 library(leaflet)
 library(DT)
 library(RColorBrewer)
-library(shinyFiles)
+library(measurements)
 
 # setwd(choose.dir(getwd(),"Choose a suitable folder")) # select subfolder 'scripts', works OK
 # setwd("C:/Users/Andrew.Plucker/Desktop/textfolder")
@@ -18,50 +15,50 @@ library(shinyFiles)
 
 # files <- list.files(pattern = "\\b20")
 
-ui <- dashboardPage(skin = "yellow",
-                    dashboardHeader(title = "MA104 Running App"),
-                    dashboardSidebar(useShinyjs(),
-                                     sidebarMenu(
-                                       menuItem("Input Panel", tabName = "Data", icon = icon("dashboard"), startExpanded = TRUE,
-                                                actionButton("do", "Transform Data"),
-                                                shinyFilesButton('files', label='File select', title='Please select a file', multiple=FALSE),
-                                                conditionalPanel(
-                                                  condition = "input.do == true",
-                                                  actionButton("gomap","View Map")),
-                                                conditionalPanel(
-                                                  condition = "input.do == true",
-                                                  uiOutput("ui1"),
-                                                  uiOutput("ui2"))
-                                       )
-                                      )),
-                    dashboardBody(
-                                 leafletOutput("mymap"),
-                                 # textOutput("text"),
-                                 DTOutput("table")
-                      )
-)                    
+ui <- dashboardPage(
+  skin = "yellow",
+  dashboardHeader(title = "MA104 Running App"),
+  dashboardSidebar(useShinyjs(),
+                   sidebarMenu(
+                     menuItem(
+                       "Input Panel",
+                       tabName = "Data",
+                       icon = icon("dashboard"),
+                       startExpanded = TRUE,
+                       fileInput(
+                         'csvfile',
+                         'Or Upload a CSV File',
+                         accept = c(
+                           'text/csv','text/comma-separated-values,text/plain','.gpx','.csv'
+                         ),
+                         multiple = TRUE
+                       ),
+                       downloadButton("AdjMat", "Download Adjacency Matrix"),
+                       actionButton("gomap", "View Map"),
+                       uiOutput("ui2"),
+                       uiOutput("ui1")
+                     )
+                   )),
+  dashboardBody(leafletOutput("mymap"),
+                # textOutput("text2"),
+                DTOutput("text")
+                # DTOutput("table"))
+  )
+)
 # Define server logic required to draw a histogram
-server <- function(input, output) {
-  
-  shinyFileChoose(input, 'files', root=c(root='.'), filetypes=c('', 'txt'))
+server <- function(input, output, session) {
 
-  
-  observeEvent(input$do, {
-    
-    files <- list.files(pattern = "\\b20")
-    
-    readGPX(files[1], way=T)
-    
+  readfile = reactive({
     totalframe = NULL
+    files = input$csvfile$datapath
     
     for (j in 1:length(files)) {
-      # Select first file from the list and import data into R object
+      # wplist <- readGPX(input$csvfile$datapath[j], way=T)
       wplist <- readGPX(files[j], way=T)
       
-      # Extract latitude, longitude, elevation, time, name and comments and apppend to R dataframe
+      
       wpdf<- wplist$tracks[[1]][[1]] 
       
-      # Create vector to store calculations for distance between data points (distance given in meters) and set starting distance to 0 
       distBetween <- c()
       distBetween[1] = 0
       
@@ -93,67 +90,91 @@ server <- function(input, output) {
       wpdfNew = wpdfNew %>%
         mutate(totDist = cumsum(distBetween))%>%
         mutate(totTime = cumsum(timeDiff)) %>%
-        select(DTG, lon, lat, totTime, totDist, ele)
+        select(DTG, lon, lat, totTime, totDist, ele) %>%
+        mutate(woNum = j)
       
       # Write .csv file
-      write.csv(wpdfNew, paste0("Workout_",j,".csv"))
+      # write.csv(wpdfNew, paste0("Workout_",j,".csv"))
       totalframe = rbind(totalframe,wpdfNew)
-
-    }
-  
-  })
-  
-  # maphelper =  reactive({
-  #                     mydata =read.csv("Workout_1.csv")
-  #   return(mydata)
-  #   })
-  
-
- 
-  observeEvent(input$gomap, {
-  
-    temp = list.files(pattern="*.csv")
-    myfiles = lapply(temp, read.delim)
-    
-    firsthelper = NULL
-    helper = NULL
-    for(i in 1:length(myfiles)){
-      helper =  as.data.frame(
-        matrix(
-          unlist(
-            strsplit(
-              as.character(unlist(myfiles[[i]][[1]])) , ","
-            )
-          ), ncol = 7, byrow = T
-          
-        )
-      )
       
-      n <- nrow(helper)
-      v <- rep(i,n)
-      helper = cbind(helper,v)
-      
-      firsthelper = rbind(firsthelper,helper)
     }
-    names(firsthelper) = c("X", "DTG", "lon", "lat", "totTime", "totDist", "ele","woNum")
     
-    firsthelper = firsthelper %>%
+    totalframe = totalframe %>%
       mutate(DTG = as.POSIXct(DTG)) %>%
       mutate(lon = as.numeric(as.character(lon))) %>%
       mutate(lat = as.numeric(as.character(lat))) %>%
       mutate(totTime = as.numeric(as.character(totTime))) %>%
       mutate(totDist = as.numeric(as.character(totDist))) %>%
-      mutate(ele = as.numeric(as.character(ele))) 
+      mutate(ele = as.numeric(as.character(ele)))
     
-    # firsthelper$ele = as.numeric(as.character(firsthelper$ele))
+    return(totalframe)   
+  })
+
+  output$text = renderDT({
     
+    validate(
+      need(input$csvfile$datapath != "", "Upload Your Quality Reps")
+    )
     
-    
+    readfile() %>%
+      group_by(woNum) %>%
+      summarise(`Start Time` = min(DTG),
+                `Distance (Miles)`  = max(totDist) %>% conv_unit(from = "m", to = "mi") %>% round(2),
+                `Elevation Change (Feet)` = (max(ele)-min(ele)) %>% conv_unit("m", "ft") %>% round(2),
+                # Time = max(DTG),
+                # Time = difftime(max(DTG),min(DTG)),
+                `Time (Minutes)` = (max(DTG)-min(DTG)) %>% round(2)
+                # Time1 = max(DTG),
+                # Time2 = min(DTG))
+      )
+
+      # filter(woNum==1)
+  })  
+  
+  output$AdjMat <- downloadHandler(
+    filename = function(){paste0("QualityRunReps.zip")},
+    content = function(file){
+      #go to a temp dir to avoid permission issues
+      owd <- setwd(tempdir())
+      on.exit(setwd(owd))
+      files <- NULL;
+      
+      iterations = readfile() %>% select(woNum) %>% summarise(max=max(woNum))
+      iterations = iterations$max
+      
+      #loop through the sheets
+      for (k in 1:iterations){
+        #write each sheet to a csv file, save the name
+        fileName <- paste("QualityRep",k,".csv",sep = "")
+        # write.table(as.data.frame(as.matrix(g[])), fileName,sep = " ")
+        write.csv(
+            readfile() %>%
+              filter(woNum==k) %>%
+              as.data.frame(),
+            fileName)
+        # write.table(data()$wb[i],fileName,sep = ';', row.names = F, col.names = T)
+        files <- c(fileName,files)
+      }
+      #create the zip file
+      zip(file,files)
+    }
+  )
+  
+########  
+  
+  output$text2 = renderText({
+   thing = class(readfile()$DTG)
+    return(thing)
+  })
+  
+  
+  observeEvent(input$gomap, {
+
   output$mymap <- renderLeaflet({
 
-    pal <- colorFactor("Dark2", firsthelper$woNum, levels = unique(firsthelper$woNum))
-    
-    firsthelper %>%
+    pal <- colorFactor("Dark2", readfile()$woNum, levels = unique(readfile()$woNum))
+
+    readfile() %>%
       filter(DTG>=input$slider[1]) %>%
       filter(DTG<=input$slider[2]) %>%
       filter(woNum==input$selections) %>%
@@ -161,55 +182,34 @@ server <- function(input, output) {
       addTiles() %>%
       addCircleMarkers(radius = 1, color = ~pal(woNum))
   })
-  
+
   # output$table = renderTable(maphelper())
   output$table = renderDT(
-    firsthelper %>%
+    readfile() %>%
       filter(DTG>=input$slider[1]) %>%
       filter(DTG<=input$slider[2]) %>%
       filter(woNum==input$selections)
     )
-  
-  output$text = renderText(
-    c(as.Date(min(firsthelper$DTG)),as.Date(min(firsthelper$DTG))-days(1))
-  # unique(firsthelper$woNum[which(firsthelper$DTG >= input$slider[1])] )
-  # unique(firsthelper$woNum[which(firsthelper$DTG >= input$slider[1] & firsthelper$DTG <= input$slider[2]) ])
-  # unique(firsthelper$woNum[which(firsthelper$DTG>input$slider[1])]&firsthelper$woNum[which(firsthelper$DTG<input$slider[2])])
-  )
-  
-   # firsthelpernames = observe({
-   #   this = firsthelper %>%
-   #     filter(DTG>=input$slider[1]) 
-   #   thisa = unique(this$woNum)
-   #   return(thisa)
-   # })
-  
+
+
   output$ui1 <- renderUI({
-    # if (is.null(input$dataset))
-    #   return()
+
     checkboxGroupInput(
       "selections",
       label = h4("Display Routes"),
-      choices =   unique(firsthelper$woNum[which(firsthelper$DTG >= input$slider[1] & firsthelper$DTG <= input$slider[2]) ]),
-      selected =   unique(firsthelper$woNum[which(firsthelper$DTG >= input$slider[1] & firsthelper$DTG <= input$slider[2]) ])
+      choices =   unique(readfile()$woNum[which(readfile()$DTG >= input$slider[1] & readfile()$DTG <= input$slider[2]) ]),
+      selected =   unique(readfile()$woNum[which(readfile()$DTG >= input$slider[1] & readfile()$DTG <= input$slider[2]) ][1])
+      # selected =   unique(readfile()$woNum[which(readfile()$DTG >= input$slider[1] & readfile()$DTG <= input$slider[2]) ])
 
     )
   })
 
   output$ui2 <- renderUI({
-    # if (is.null(input$dataset))
-    #   return()
-    # sliderInput("slider", "Time", min = as.Date("2010-01-01"),max =as.Date("2018-12-01"),value=c(as.Date("2010-01-01"),as.Date("2018-12-01")),timeFormat="%b %Y")
-    sliderInput("slider", "Time", min = as.Date(min(firsthelper$DTG)-days(1)),max =as.Date(max(firsthelper$DTG)+days(1)),value=c(as.Date(min(firsthelper$DTG)-days(1)),as.Date(max(firsthelper$DTG)+days(1))))
-    # sliderInput("slider", "Time", min = as.Date(min(firsthelper$DTG)),max =as.Date(max(firsthelper$DTG)),value=c(as.Date(min(firsthelper$DTG)),as.Date(max(firsthelper$DTG))),timeFormat="%b %Y")
+    sliderInput("slider", "Time", min = as.Date(min(readfile()$DTG)-days(1)),max =as.Date(max(readfile()$DTG)+days(1)),value=c(as.Date(min(readfile()$DTG)-days(1)),as.Date(max(readfile()$DTG)+days(1))))
+  })
   })
 
-  # output$text = renderText(as.Date(input$slider[1]))
-    
-  })
-  
 }
-
 
 # Run the application 
 shinyApp(ui = ui, server = server)
