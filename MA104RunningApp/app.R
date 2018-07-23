@@ -45,7 +45,7 @@ ui <- dashboardPage(
                 # DTOutput("table"))
   )
 )
-# Define server logic required to draw a histogram
+# Define server logic 
 server <- function(input, output, session) {
 
   readfile = reactive({
@@ -53,25 +53,21 @@ server <- function(input, output, session) {
     files = input$csvfile$datapath
     
     for (j in 1:length(files)) {
-      # wplist <- readGPX(input$csvfile$datapath[j], way=T)
-      wplist <- readGPX(files[j], way=T)
-      
-      
-      wpdf<- wplist$tracks[[1]][[1]] 
-      
+      wplist <- readGPX(files[j], way = T)
+      wpdf <- wplist$tracks[[1]][[1]]
       distBetween <- c()
       distBetween[1] = 0
-      
       # Loop to calculate distances between all collected points
-      for (i in 1:(nrow(wpdf)-1)) {
-        distBetween[i+1] = distm(cbind(wpdf$lon[i],wpdf$lat[i]),cbind(wpdf$lon[i+1],wpdf$lat[i+1]),fun=distHaversine)
+      for (i in 1:(nrow(wpdf) - 1)) {
+        distBetween[i + 1] = distm(cbind(wpdf$lon[i], wpdf$lat[i]),
+                                   cbind(wpdf$lon[i + 1], wpdf$lat[i + 1]),
+                                   fun = distHaversine)
       }
-      
-      # Append the between distances as a column to the data 
+      # Append the between distances as a column to the data
       wpdf["distBetween"] <- distBetween
       
       # Convert imported date and time data into a usable format (note: time zone defaults to Z)
-      wpdfNew = wpdf %>% 
+      wpdfNew = wpdf %>%
         mutate(DTG = ymd_hms(time))
       
       # Create vector to store calculations for time between data points (time given in seconds) and set starting time to 0
@@ -79,8 +75,8 @@ server <- function(input, output, session) {
       timeDiff[1] = 0
       
       # Loop to calculate the time (in seconds) between all collected points
-      for(i in 1:(nrow(wpdfNew)-1)) {
-        timeDiff[i+1] = as.numeric(difftime(wpdfNew$DTG[i+1],wpdfNew$DTG[i],units = "sec"))
+      for (i in 1:(nrow(wpdfNew) - 1)) {
+        timeDiff[i + 1] = as.numeric(difftime(wpdfNew$DTG[i + 1], wpdfNew$DTG[i], units = "sec"))
       }
       
       # Append the between times as a column to the data
@@ -88,16 +84,14 @@ server <- function(input, output, session) {
       
       # Mutate the data so that we have the cumulative time and distances and then select the data that we want.
       wpdfNew = wpdfNew %>%
-        mutate(totDist = cumsum(distBetween))%>%
+        mutate(totDist = cumsum(distBetween)) %>%
         mutate(totTime = cumsum(timeDiff)) %>%
         select(DTG, lon, lat, totTime, totDist, ele) %>%
         mutate(woNum = j)
       
-      # Write .csv file
-      # write.csv(wpdfNew, paste0("Workout_",j,".csv"))
-      totalframe = rbind(totalframe,wpdfNew)
+      totalframe = rbind(totalframe, wpdfNew)
       
-    }
+    } ## End loop
     
     totalframe = totalframe %>%
       mutate(DTG = as.POSIXct(DTG)) %>%
@@ -107,106 +101,106 @@ server <- function(input, output, session) {
       mutate(totDist = as.numeric(as.character(totDist))) %>%
       mutate(ele = as.numeric(as.character(ele)))
     
-    return(totalframe)   
+    return(totalframe)
   })
 
   output$text = renderDT({
-    
-    validate(
-      need(input$csvfile$datapath != "", "Upload Your Quality Reps")
-    )
+    validate(need(input$csvfile$datapath != "", "Upload Your Quality Reps"))
     
     readfile() %>%
       group_by(woNum) %>%
-      summarise(`Start Time` = min(DTG),
-                `Distance (Miles)`  = max(totDist) %>% conv_unit(from = "m", to = "mi") %>% round(2),
-                `Elevation Change (Feet)` = (max(ele)-min(ele)) %>% conv_unit("m", "ft") %>% round(2),
-                # Time = max(DTG),
-                # Time = difftime(max(DTG),min(DTG)),
-                `Time (Minutes)` = (max(DTG)-min(DTG)) %>% round(2)
-                # Time1 = max(DTG),
-                # Time2 = min(DTG))
+      summarise(
+        `Start Time` = min(DTG),
+        `Distance (Miles)`  = max(totDist) %>% conv_unit(from = "m", to = "mi") %>% round(2),
+        `Elevation Change (Feet)` = (max(ele) - min(ele)) %>% conv_unit("m", "ft") %>% round(2),
+        # Time = max(DTG),
+        # Time = difftime(max(DTG),min(DTG)),
+        `Time (Minutes)` = (max(DTG) - min(DTG)) %>% round(2)
+        # Time1 = max(DTG),
+        # Time2 = min(DTG))
       )
-
-      # filter(woNum==1)
   })  
   
   output$AdjMat <- downloadHandler(
-    filename = function(){paste0("QualityRunReps.zip")},
-    content = function(file){
+    filename = function() {
+      paste0("QualityRunReps.zip")
+    },
+    content = function(file) {
       #go to a temp dir to avoid permission issues
       owd <- setwd(tempdir())
       on.exit(setwd(owd))
-      files <- NULL;
+      files <- NULL
       
-      iterations = readfile() %>% select(woNum) %>% summarise(max=max(woNum))
+      iterations = readfile() %>% select(woNum) %>% summarise(max = max(woNum))
       iterations = iterations$max
       
       #loop through the sheets
-      for (k in 1:iterations){
+      for (k in 1:iterations) {
         #write each sheet to a csv file, save the name
-        fileName <- paste("QualityRep",k,".csv",sep = "")
+        fileName <- paste("QualityRep", k, ".csv", sep = "")
         # write.table(as.data.frame(as.matrix(g[])), fileName,sep = " ")
-        write.csv(
-            readfile() %>%
-              filter(woNum==k) %>%
-              as.data.frame(),
-            fileName)
+        write.csv(readfile() %>%
+                    filter(woNum == k) %>%
+                    as.data.frame(),
+                  fileName)
         # write.table(data()$wb[i],fileName,sep = ';', row.names = F, col.names = T)
-        files <- c(fileName,files)
+        files <- c(fileName, files)
       }
       #create the zip file
-      zip(file,files)
+      zip(file, files)
     }
   )
   
 ########  
   
-  output$text2 = renderText({
-   thing = class(readfile()$DTG)
-    return(thing)
-  })
-  
+  # output$text2 = renderText({
+  #   thing = class(readfile()$DTG)
+  #   return(thing)
+  # })
   
   observeEvent(input$gomap, {
-
-  output$mymap <- renderLeaflet({
-
-    pal <- colorFactor("Dark2", readfile()$woNum, levels = unique(readfile()$woNum))
-
-    readfile() %>%
-      filter(DTG>=input$slider[1]) %>%
-      filter(DTG<=input$slider[2]) %>%
-      filter(woNum==input$selections) %>%
-    leaflet()  %>%
-      addTiles() %>%
-      addCircleMarkers(radius = 1, color = ~pal(woNum))
-  })
-
-  # output$table = renderTable(maphelper())
-  output$table = renderDT(
-    readfile() %>%
-      filter(DTG>=input$slider[1]) %>%
-      filter(DTG<=input$slider[2]) %>%
-      filter(woNum==input$selections)
+    output$mymap <- renderLeaflet({
+      pal <-
+        colorFactor("Dark2", readfile()$woNum, levels = unique(readfile()$woNum))
+      
+      readfile() %>%
+        filter(DTG >= input$slider[1]) %>%
+        filter(DTG <= input$slider[2]) %>%
+        filter(woNum == input$selections) %>%
+        leaflet()  %>%
+        addTiles() %>%
+        addCircleMarkers(radius = 1, color = ~ pal(woNum))
+    })
+    
+    output$table = renderDT(
+      readfile() %>%
+        filter(DTG >= input$slider[1]) %>%
+        filter(DTG <= input$slider[2]) %>%
+        filter(woNum == input$selections)
     )
-
-
-  output$ui1 <- renderUI({
-
-    checkboxGroupInput(
-      "selections",
-      label = h4("Display Routes"),
-      choices =   unique(readfile()$woNum[which(readfile()$DTG >= input$slider[1] & readfile()$DTG <= input$slider[2]) ]),
-      selected =   unique(readfile()$woNum[which(readfile()$DTG >= input$slider[1] & readfile()$DTG <= input$slider[2]) ][1])
-      # selected =   unique(readfile()$woNum[which(readfile()$DTG >= input$slider[1] & readfile()$DTG <= input$slider[2]) ])
-
-    )
-  })
-
-  output$ui2 <- renderUI({
-    sliderInput("slider", "Time", min = as.Date(min(readfile()$DTG)-days(1)),max =as.Date(max(readfile()$DTG)+days(1)),value=c(as.Date(min(readfile()$DTG)-days(1)),as.Date(max(readfile()$DTG)+days(1))))
-  })
+    
+    
+    output$ui1 <- renderUI({
+      checkboxGroupInput(
+        "selections",
+        label = h4("Display Routes"),
+        choices =   unique(readfile()$woNum[which(readfile()$DTG >= input$slider[1] &
+                                                    readfile()$DTG <= input$slider[2])]),
+        selected =   unique(readfile()$woNum[which(readfile()$DTG >= input$slider[1] &
+                                                     readfile()$DTG <= input$slider[2])][1])
+      )
+    })
+    
+    output$ui2 <- renderUI({
+      sliderInput(
+        "slider",
+        "Time",
+        min = as.Date(min(readfile()$DTG) - days(1)),
+        max = as.Date(max(readfile()$DTG) + days(1)),
+        value = c(as.Date(min(readfile()$DTG) - days(1)), as.Date(max(readfile()$DTG) + days(1)))
+      )
+    })
+    
   })
 
 }
