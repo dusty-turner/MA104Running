@@ -32,16 +32,20 @@ ui <- dashboardPage(
                          ),
                          multiple = TRUE
                        ),
-                       downloadButton("AdjMat", "Download Adjacency Matrix"),
+                       downloadButton("AdjMat", "Download Quality Reps .csv"),
                        actionButton("gomap", "View Map"),
                        uiOutput("ui2"),
                        uiOutput("ui1")
                      )
                    )),
-  dashboardBody(leafletOutput("mymap"),
+  dashboardBody(
+              
+    fluidRow(
+                box(title="Map of Quality Reps",status="warning", solidHeader = TRUE,
+                  leafletOutput("mymap"),width=12, collapsible = TRUE)),
                 # textOutput("text2"),
-                DTOutput("text")
-                # DTOutput("table"))
+                box(title="Summary of Quality Reps", status="warning", solidHeader = TRUE,
+                    DTOutput("text"),width=12, collapsible = TRUE)
   )
 )
 # Define server logic 
@@ -156,19 +160,35 @@ server <- function(input, output, session) {
   #   thing = class(readfile()$DTG)
   #   return(thing)
   # })
+
+#Create an empty map for initial display  
+  output$mymap<-renderLeaflet({
+    leaflet()%>%setView(lng = -73.9560, lat = 41.3915, zoom = 15)%>%
+    addTiles()
+  })
   
   observeEvent(input$gomap, {
     output$mymap <- renderLeaflet({
       pal <-
         colorFactor("Dark2", readfile()$woNum, levels = unique(readfile()$woNum))
       
-      readfile() %>%
-        filter(DTG >= input$slider[1]) %>%
-        filter(DTG <= input$slider[2]) %>%
-        filter(woNum == input$selections) %>%
-        leaflet()  %>%
-        addTiles() %>%
-        addCircleMarkers(radius = 1, color = ~ pal(woNum))
+      if(is.null(input$selections)){
+       
+        leaflet()%>%
+          setView(lng = -73.9560, lat = 41.3915, zoom = 15)%>%
+          addTiles()
+      }
+        else {
+       
+         readfile() %>%
+          filter(DTG >= input$slider[1]) %>%
+          filter(DTG <= input$slider[2]) %>%
+          filter(woNum == input$selections) %>%
+          leaflet()  %>%
+          addTiles() %>%
+          addCircleMarkers(radius = 1, color = ~ pal(woNum))
+        }
+      
     })
     
     output$table = renderDT(
