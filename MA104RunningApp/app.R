@@ -24,20 +24,16 @@ ui <- dashboardPage(
                        tabName = "Data",
                        icon = icon("dashboard"),
                        startExpanded = TRUE,
-                       fileInput(
-                         'csvfile',
-                         'Upload GPX Files',
-                         accept = c(
-                           'text/csv','text/comma-separated-values,text/plain','.gpx','.csv'
-                         ),
-                         multiple = TRUE
-                       ),
-                       downloadButton("AdjMat", "Download Workout Data"),
-                       actionButton("gomap", "View Map"),
-                       uiOutput("ui2"),
-                       uiOutput("ui1")
-                     )
-                   )),
+                       # menuSubItem("Sub", tabName = "Sub",
+                        fileInput('csvfile','Upload GPX Files',accept = c('text/csv','text/comma-separated-values,text/plain','.gpx','.csv'),multiple = TRUE),
+                        tags$b("Download CSV Workout Data", tags$br()),
+                        downloadButton("AdjMat", "Download"),
+                       tags$b(tags$br(),tags$br(),"View the Map"),
+                        actionButton("gomap", "View Map"),
+                        uiOutput("ui2"),
+                        uiOutput("ui1")
+                     ))),
+                   
   dashboardBody(leafletOutput("mymap"),
                 # textOutput("text2"),
                 DTOutput("text")
