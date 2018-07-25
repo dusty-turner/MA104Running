@@ -24,6 +24,7 @@ ui <- dashboardPage(
                        tabName = "Data",
                        icon = icon("dashboard"),
                        startExpanded = TRUE,
+# <<<<<<< HEAD
                        fileInput(
                          'csvfile',
                          'Or Upload a CSV File',
