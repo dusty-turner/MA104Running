@@ -12,7 +12,6 @@ library(measurements)
 # setwd(choose.dir(getwd(),"Choose a suitable folder")) # select subfolder 'scripts', works OK
 # setwd("C:/Users/Andrew.Plucker/Desktop/textfolder")
 # setwd("C:/Users/Dusty.Turner/Desktop/textfoldera")
-
 # files <- list.files(pattern = "\\b20")
 
 ui <- dashboardPage(
