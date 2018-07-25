@@ -5,9 +5,8 @@ account: dustyturner
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 384986
-bundleId: 1495616
+bundleId: 1495764
 url: https://dustyturner.shinyapps.io/MA104RunningApp/
-when: 1532367085.45437
+when: 1532373463.9509
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: Workout_1.csv|Workout_2.csv|Workout_3.csv|Workout_4.csv|Workout_5.csv|Workout_6.csv|Workout_7.csv|Workout_8.csv

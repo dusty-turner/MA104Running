@@ -27,13 +27,13 @@ ui <- dashboardPage(
                        startExpanded = TRUE,
                        fileInput(
                          'csvfile',
-                         'Or Upload a CSV File',
+                         'Upload GPX Files',
                          accept = c(
                            'text/csv','text/comma-separated-values,text/plain','.gpx','.csv'
                          ),
                          multiple = TRUE
                        ),
-                       downloadButton("AdjMat", "Download Adjacency Matrix"),
+                       downloadButton("AdjMat", "Download Workout Data"),
                        actionButton("gomap", "View Map"),
                        uiOutput("ui2"),
                        uiOutput("ui1")
