@@ -19,12 +19,12 @@ ui <- dashboardPage(
   dashboardHeader(title = "MA104 Running App"),
   dashboardSidebar(useShinyjs(),
                    sidebarMenu(
-                     menuItem(
-                       "Input Panel",
-                       tabName = "Data",
-                       icon = icon("dashboard"),
-                       startExpanded = TRUE,
-# <<<<<<< HEAD
+                     # menuItem(
+                       # "Input Panel",
+                       # tabName = "Data",
+                       # icon = icon("dashboard"),
+                       # startExpanded = TRUE,
+
                        fileInput(
                          'csvfile',
                          'Or Upload a CSV File',
@@ -33,20 +33,22 @@ ui <- dashboardPage(
                          ),
                          multiple = TRUE
                        ),
+                       tags$b("Download CSV Workout Data", tags$br()),
                        downloadButton("AdjMat", "Download Quality Reps .csv"),
+                       tags$b(tags$br(),tags$br(),"View the Map"),
                        actionButton("gomap", "View Map"),
                        uiOutput("ui2"),
                        uiOutput("ui1")
-                     )
+                     # )
                    )),
   dashboardBody(
               
     fluidRow(
                 box(title="Map of Quality Reps",status="warning", solidHeader = TRUE,
                   leafletOutput("mymap"),width=12, collapsible = TRUE)),
-                # textOutput("text2"),
+    fluidRow(
                 box(title="Summary of Quality Reps", status="warning", solidHeader = TRUE,
-                    DTOutput("text"),width=12, collapsible = TRUE)
+                    DTOutput("text"),width=12, height=40, collapsible = TRUE))
   )
 )
 # Define server logic 
@@ -123,7 +125,7 @@ server <- function(input, output, session) {
         # Time1 = max(DTG),
         # Time2 = min(DTG))
       )
-  })  
+  },height = "auto")  
   
   output$AdjMat <- downloadHandler(
     filename = function() {
