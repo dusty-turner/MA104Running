@@ -24,7 +24,11 @@ ui <- dashboardPage(
                        # tabName = "Data",
                        # icon = icon("dashboard"),
                        # startExpanded = TRUE,
-
+                       textInput("idnum","Enter your Cadet ID Number", "CIDNUM"),
+                       actionButton("do", "Submit Cadet ID Number"),
+                       conditionalPanel(
+                         condition = "input.do == true",
+                         # "nchar(input.idnum) > 8",
                        fileInput(
                          'csvfile',
                          'Or Upload a CSV File',
@@ -38,7 +42,7 @@ ui <- dashboardPage(
                        tags$b(tags$br(),tags$br(),"View the Map"),
                        actionButton("gomap", "View Map"),
                        uiOutput("ui2"),
-                       uiOutput("ui1")
+                       uiOutput("ui1"))
                      # )
                    )),
   dashboardBody(
@@ -48,7 +52,7 @@ ui <- dashboardPage(
                   leafletOutput("mymap"),width=12, collapsible = TRUE)),
     fluidRow(
                 box(title="Summary of Quality Reps", status="warning", solidHeader = TRUE,
-                    DTOutput("text"),width=12, height=40, collapsible = TRUE))
+                    DTOutput("text"),width=12, collapsible = TRUE))
   )
 )
 # Define server logic 
@@ -93,7 +97,8 @@ server <- function(input, output, session) {
         mutate(totDist = cumsum(distBetween)) %>%
         mutate(totTime = cumsum(timeDiff)) %>%
         select(DTG, lon, lat, totTime, totDist, ele) %>%
-        mutate(woNum = j)
+        mutate(woNum = j) %>%
+        mutate(CIDNUM = input$idnum)
       
       totalframe = rbind(totalframe, wpdfNew)
       

@@ -5,8 +5,8 @@ account: dustyturner
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 384986
-bundleId: 1500020
+bundleId: 1501565
 url: https://dustyturner.shinyapps.io/MA104RunningApp/
-when: 1532539379.10924
+when: 1532605672.68494
 asMultiple: FALSE
 asStatic: FALSE
