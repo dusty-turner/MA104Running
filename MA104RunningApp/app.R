@@ -31,7 +31,7 @@ ui <- dashboardPage(
                          # "nchar(input.idnum) > 8",
                        fileInput(
                          'csvfile',
-                         'Or Upload a CSV File',
+                         'Upload GPX File',
                          accept = c(
                            'text/csv','text/comma-separated-values,text/plain','.gpx','.csv'
                          ),
